@@ -15,10 +15,12 @@ export const usePageConstraints = (pageSize) => {
   const { setViewport } = useReactFlow();
   const pageSizeRef = useRef(PAGE_SIZES[pageSize]);
 
-  // Check if node is within page boundaries
+  // Check if node is within page boundaries - CHÍNH XÁC HƠN
   const isNodeWithinPage = useCallback((node, page) => {
-    const nodeRight = node.position.x + (node.style?.width || 0);
-    const nodeBottom = node.position.y + (node.style?.height || 0);
+    const nodeWidth = node.style?.width || 100;
+    const nodeHeight = node.style?.height || 50;
+    const nodeRight = node.position.x + nodeWidth;
+    const nodeBottom = node.position.y + nodeHeight;
 
     return (
       node.position.x >= 0 &&
@@ -45,59 +47,107 @@ export const usePageConstraints = (pageSize) => {
     []
   );
 
-  // Constrain position to page boundaries
+  // Constrain position to page boundaries - FIX CHO BIÊN PHẢI
+  // Constrain position to page boundaries - FIX TRIỆT ĐỂ
   const constrainToPage = useCallback(
     (position, nodeWidth = 0, nodeHeight = 0) => {
       const page = pageSizeRef.current;
       let newX = position.x;
       let newY = position.y;
 
+      // Đảm bảo không vượt quá biên trái
       if (newX < 0) newX = 0;
-      if (newX + nodeWidth > page.width) newX = page.width - nodeWidth;
+
+      // Đảm bảo không vượt quá biên trên
       if (newY < 0) newY = 0;
-      if (newY + nodeHeight > page.height) newY = page.height - nodeHeight;
+
+      // Đảm bảo không vượt quá biên phải - TÍNH TOÁN CHÍNH XÁC
+      const rightBoundary = page.width - nodeWidth;
+      if (newX > rightBoundary) {
+        newX = rightBoundary;
+      }
+
+      // Đảm bảo không vượt quá biên dưới
+      const bottomBoundary = page.height - nodeHeight;
+      if (newY > bottomBoundary) {
+        newY = bottomBoundary;
+      }
+
+      // Đảm bảo không bị âm sau khi tính toán
+      newX = Math.max(0, newX);
+      newY = Math.max(0, newY);
 
       return { x: newX, y: newY };
     },
     []
   );
 
-  // Constrain viewport to page boundaries - FIXED VERSION
+  // Constrain viewport to page boundaries - CHÍNH XÁC HƠN
+  // Trong hooks.js, sửa constrainViewport
+  // Constrain viewport to page boundaries - FIX TRIỆT ĐỂ
   const constrainViewport = useCallback(
     (viewport, containerWidth, containerHeight) => {
       const page = pageSizeRef.current;
       const zoom = viewport.zoom || 1;
 
+      // Kích thước visible area trong flow coordinates
       const visibleWidth = containerWidth / zoom;
       const visibleHeight = containerHeight / zoom;
 
       let x = viewport.x;
       let y = viewport.y;
 
-      // Allow panning when zoomed in - chỉ constrain khi cần thiết
-      const maxX = Math.max(0, page.width - visibleWidth);
-      const maxY = Math.max(0, page.height - visibleHeight);
+      // Tính toán boundary constraints
+      const minX = -(page.width - visibleWidth);
+      const minY = -(page.height - visibleHeight);
 
+      // Constrain X - không cho pan ra ngoài biên
       if (visibleWidth >= page.width) {
         // Nếu viewport rộng hơn page, center nó
         x = (page.width - visibleWidth) / 2;
       } else {
         // Nếu viewport nhỏ hơn page, constrain panning
-        x = Math.max(-maxX, Math.min(0, x));
+        x = Math.max(minX, Math.min(0, x));
       }
 
+      // Constrain Y - không cho pan ra ngoài biên
       if (visibleHeight >= page.height) {
         // Nếu viewport cao hơn page, center nó
         y = (page.height - visibleHeight) / 2;
       } else {
         // Nếu viewport thấp hơn page, constrain panning
-        y = Math.max(-maxY, Math.min(0, y));
+        y = Math.max(minY, Math.min(0, y));
       }
 
       return { x, y, zoom };
     },
     []
   );
+
+  // Constrain node dimensions - NGĂN RESIZE VƯỢT BIÊN
+  const constrainDimensions = useCallback((node, newDimensions) => {
+    const page = pageSizeRef.current;
+    let width = newDimensions.width || node.style?.width || 0;
+    let height = newDimensions.height || node.style?.height || 0;
+
+    // Đảm bảo không resize vượt quá biên phải
+    const maxWidth = page.width - node.position.x;
+    if (width > maxWidth) {
+      width = maxWidth;
+    }
+
+    // Đảm bảo không resize vượt quá biên dưới
+    const maxHeight = page.height - node.position.y;
+    if (height > maxHeight) {
+      height = maxHeight;
+    }
+
+    // Đảm bảo kích thước tối thiểu
+    width = Math.max(width, 10);
+    height = Math.max(height, 10);
+
+    return { width, height };
+  }, []);
 
   useEffect(() => {
     pageSizeRef.current = PAGE_SIZES[pageSize];
@@ -113,6 +163,7 @@ export const usePageConstraints = (pageSize) => {
     isPositionWithinPage,
     constrainToPage,
     constrainViewport,
+    constrainDimensions,
     pageSizeRef,
   };
 };
@@ -129,14 +180,13 @@ export const useContainerSize = (pageSize, containerRef) => {
         const mainElement = containerRef.current.closest(".designer-main");
         if (mainElement) {
           const mainRect = mainElement.getBoundingClientRect();
-          const availableWidth = mainRect.width - 40;
-          const availableHeight = mainRect.height - 40;
 
+          // Tính toán scale để fit vào container mà vẫn giữ tỉ lệ
           const page = PAGE_SIZES[pageSize];
           const scale = Math.min(
-            availableWidth / page.width,
-            availableHeight / page.height,
-            1
+            (mainRect.width - 60) / page.width, // Thêm padding
+            (mainRect.height - 60) / page.height,
+            1 // Không scale up
           );
 
           setContainerSize({

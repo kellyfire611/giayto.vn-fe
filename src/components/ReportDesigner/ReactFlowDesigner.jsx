@@ -22,13 +22,24 @@ const ReactFlowDesigner = ({ onElementSelect, selectedTool }) => {
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [snapGrid, setSnapGrid] = useState([10, 10]);
   const [currentZoom, setCurrentZoom] = useState(1);
-  
+
   const containerRef = useRef(null);
   const { project, setViewport, zoomIn, zoomOut, fitView } = useReactFlow();
-  
+
   const containerSize = useContainerSize(pageSize, containerRef);
-  const { constrainToPage, constrainViewport, isNodeWithinPage } = usePageConstraints(pageSize);
-  const { onDoubleClick } = useNodeCreation(selectedTool, project, snapToGrid, snapGrid, setNodes);
+  const {
+    constrainToPage,
+    constrainViewport,
+    constrainDimensions,
+    isNodeWithinPage,
+  } = usePageConstraints(pageSize);
+  const { onDoubleClick } = useNodeCreation(
+    selectedTool,
+    project,
+    snapToGrid,
+    snapGrid,
+    setNodes
+  );
 
   // Set initial viewport
   useEffect(() => {
@@ -36,13 +47,15 @@ const ReactFlowDesigner = ({ onElementSelect, selectedTool }) => {
       setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 0 });
       setCurrentZoom(1);
     }, 150);
-    
+
     return () => clearTimeout(timer);
   }, [setViewport]);
 
   // Remove nodes outside page boundaries khi page size thay đổi
   useEffect(() => {
-    setNodes(nodes => nodes.filter(node => isNodeWithinPage(node, PAGE_SIZES[pageSize])));
+    setNodes((nodes) =>
+      nodes.filter((node) => isNodeWithinPage(node, PAGE_SIZES[pageSize]))
+    );
   }, [pageSize, setNodes, isNodeWithinPage]);
 
   const onConnect = useCallback(
@@ -77,7 +90,13 @@ const ReactFlowDesigner = ({ onElementSelect, selectedTool }) => {
   }, [zoomOut]);
 
   const handleZoomToFit = useCallback(() => {
-    fitView({ duration: 300, padding: 0.1 });
+    fitView({
+      duration: 300,
+      padding: 0.1,
+      includeHidden: false,
+      minZoom: 0.1,
+      maxZoom: 1,
+    });
   }, [fitView]);
 
   const handleResetZoom = useCallback(() => {
@@ -86,97 +105,119 @@ const ReactFlowDesigner = ({ onElementSelect, selectedTool }) => {
   }, [setViewport]);
 
   // Grid snapping function
-  const snapPosition = useCallback((position) => {
-    if (!snapToGrid) return position;
-    
-    return {
-      x: Math.round(position.x / snapGrid[0]) * snapGrid[0],
-      y: Math.round(position.y / snapGrid[1]) * snapGrid[1],
-    };
-  }, [snapToGrid, snapGrid]);
+  const snapPosition = useCallback(
+    (position) => {
+      if (!snapToGrid) return position;
 
-  // Custom node change with boundary constraints
+      return {
+        x: Math.round(position.x / snapGrid[0]) * snapGrid[0],
+        y: Math.round(position.y / snapGrid[1]) * snapGrid[1],
+      };
+    },
+    [snapToGrid, snapGrid]
+  );
+
+  // Custom node change with boundary constraints - CẢI THIỆN
+  // Custom node change with boundary constraints - FIX CHO BIÊN PHẢI
   const onNodesChangeWithConstraints = useCallback(
     (changes) => {
-      const updatedChanges = changes.map(change => {
-        if (change.type === 'position' && change.position) {
-          const node = nodes.find(n => n.id === change.id);
+      const updatedChanges = changes.map((change) => {
+        if (change.type === "position" && change.position) {
+          const node = nodes.find((n) => n.id === change.id);
           if (node) {
-            const nodeWidth = node.style?.width || 0;
-            const nodeHeight = node.style?.height || 0;
-            
+            // Lấy kích thước THỰC TẾ của node, không phải mặc định
+            const nodeWidth = node.style?.width || 100;
+            const nodeHeight = node.style?.height || 50;
+
             let newPosition = change.position;
-            
+
+            // Apply grid snapping
             if (snapToGrid) {
               newPosition = snapPosition(newPosition);
             }
-            
+
+            // Apply boundary constraints - FIX: truyền kích thước thực
             newPosition = constrainToPage(newPosition, nodeWidth, nodeHeight);
-            
+
             return {
               ...change,
               position: newPosition,
             };
           }
         }
-        
-        if (change.type === 'dimensions' && change.dimensions) {
-          const node = nodes.find(n => n.id === change.id);
+
+        if (change.type === "dimensions" && change.dimensions) {
+          const node = nodes.find((n) => n.id === change.id);
           if (node) {
-            const nodeWidth = change.dimensions.width || node.style?.width || 0;
-            const nodeHeight = change.dimensions.height || node.style?.height || 0;
-            
-            const right = node.position.x + nodeWidth;
-            const bottom = node.position.y + nodeHeight;
-            const page = PAGE_SIZES[pageSize];
-            
-            let constrainedWidth = nodeWidth;
-            let constrainedHeight = nodeHeight;
-            
-            if (right > page.width) {
-              constrainedWidth = page.width - node.position.x;
-            }
-            if (bottom > page.height) {
-              constrainedHeight = page.height - node.position.y;
-            }
-            
+            // Constrain dimensions để không resize vượt biên
+            const constrainedDimensions = constrainDimensions(
+              node,
+              change.dimensions
+            );
+
             return {
               ...change,
-              dimensions: {
-                width: constrainedWidth,
-                height: constrainedHeight,
-              },
+              dimensions: constrainedDimensions,
+              resizing: true,
             };
           }
         }
-        
+
+        if (change.type === "select") {
+          // Khi select node, cập nhật properties panel
+          const node = nodes.find((n) => n.id === change.id);
+          if (node && change.selected) {
+            onElementSelect({
+              id: node.id,
+              type: node.type,
+              position: node.position,
+              data: node.data,
+              style: node.style,
+            });
+          }
+        }
+
         return change;
       });
-      
+
       onNodesChange(updatedChanges);
     },
-    [nodes, snapToGrid, snapPosition, constrainToPage, pageSize, onNodesChange]
+    [
+      nodes,
+      snapToGrid,
+      snapPosition,
+      constrainToPage,
+      constrainDimensions,
+      onElementSelect,
+      onNodesChange,
+    ]
   );
 
-  // Handle viewport changes - FIXED: Cho phép panning khi zoom
+  // Handle viewport changes - CHẶN PANNING NGOÀI BIÊN
   const onMove = useCallback(
     (event, viewport) => {
       setCurrentZoom(viewport.zoom);
-      
+
       if (containerRef.current) {
         const constrainedViewport = constrainViewport(
-          viewport, 
-          containerSize.width, 
+          viewport,
+          containerSize.width,
           containerSize.height
         );
-        
-        if (constrainedViewport.x !== viewport.x || constrainedViewport.y !== viewport.y) {
+
+        // Luôn áp dụng constraints để đảm bảo không pan ra ngoài
+        if (
+          constrainedViewport.x !== viewport.x ||
+          constrainedViewport.y !== viewport.y
+        ) {
           setViewport(constrainedViewport, { duration: 0 });
         }
       }
     },
     [containerSize, constrainViewport, setViewport]
   );
+
+  const panOnDrag = [1, 2];
 
   return (
     <div className="react-flow-designer" ref={containerRef}>
@@ -193,17 +234,22 @@ const ReactFlowDesigner = ({ onElementSelect, selectedTool }) => {
         onResetZoom={handleResetZoom}
         onZoomToFit={handleZoomToFit}
       />
-
-      <div 
+      {/* Debug boundary info */}
+      <div className="boundary-indicator">
+        Page: {PAGE_SIZES[pageSize].width} x {PAGE_SIZES[pageSize].height}px
+      </div>
+      {/* Page Container với kích thước CHÍNH XÁC */}
+      <div
         className="page-container-exact"
         style={{
           width: containerSize.width,
           height: containerSize.height,
-          margin: '0 auto',
-          backgroundColor: 'white',
-          border: '2px solid #2c5282',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-          position: 'relative',
+          margin: "0 auto",
+          backgroundColor: "white",
+          border: "2px solid #2c5282",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
         <ReactFlow
@@ -221,22 +267,63 @@ const ReactFlowDesigner = ({ onElementSelect, selectedTool }) => {
           snapGrid={snapGrid}
           minZoom={0.1}
           maxZoom={3}
+          panOnScroll={true}
+          selectionOnDrag={true}
+          panOnDrag={false}
           deleteKeyCode={["Delete", "Backspace"]}
           style={{
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'white',
+            width: "100%",
+            height: "100%",
+            backgroundColor: "white",
           }}
           proOptions={{ hideAttribution: true }}
+          // QUAN TRỌNG: Sử dụng nodeExtent để constraint nodes
+          nodeExtent={[
+            [0, 0],
+            [PAGE_SIZES[pageSize].width, PAGE_SIZES[pageSize].height],
+          ]}
+          // Thêm các props để đảm bảo boundary chính xác
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          fitViewOptions={{
+            padding: 0.1,
+            includeHidden: true,
+            minZoom: 0.1,
+            maxZoom: 1,
+          }}
         >
-          <Controls showInteractive={false} style={{ display: 'none' }} />
-          <Background 
-            variant="dots" 
-            gap={snapGrid[0]} 
-            size={1} 
+          <Controls showInteractive={false} style={{ display: "none" }} />
+          <Background
+            variant="dots"
+            gap={snapGrid[0]}
+            size={1}
             color={snapToGrid ? "#e8e8e8" : "#f0f0f0"}
           />
         </ReactFlow>
+      </div>
+
+      <div
+        className="boundary-debug"
+        style={{
+          position: "absolute",
+          top: "50px",
+          left: "10px",
+          background: "rgba(0,0,0,0.8)",
+          color: "white",
+          padding: "8px",
+          borderRadius: "4px",
+          fontSize: "12px",
+          zIndex: 1000,
+          pointerEvents: "none",
+        }}
+      >
+        <div>
+          Page: {PAGE_SIZES[pageSize].width} x {PAGE_SIZES[pageSize].height}
+        </div>
+        <div>
+          Container: {Math.round(containerSize.width)} x{" "}
+          {Math.round(containerSize.height)}
+        </div>
+        <div>Zoom: {Math.round(currentZoom * 100)}%</div>
       </div>
     </div>
   );

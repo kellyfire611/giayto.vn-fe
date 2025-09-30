@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* Layout Styles */
 .report-designer {
   height: 100vh;
   display: flex;
@@ -31,7 +32,14 @@
 
 .designer-main {
   flex: 1;
-  padding: 1rem;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
   overflow: hidden;
 }
 
@@ -43,6 +51,7 @@
   overflow-y: auto;
 }
 
+/* Toolbar Styles */
 .toolbar-section {
   margin-bottom: 2rem;
 }
@@ -89,25 +98,7 @@
   font-size: 0.8rem;
 }
 
-.action-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.action-btn {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.action-btn:hover {
-  background: #e9ecef;
-}
-
+/* Properties Panel */
 .properties-panel h3 {
   margin-bottom: 1rem;
   color: #333;
@@ -153,55 +144,114 @@
   padding: 2rem;
 }
 
-.btn-primary {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
+/* React Flow Container */
+.react-flow-designer {
+  width: 100%;
+  height: 100%;
+  background: #f5f5f5;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
 }
 
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
+/* Page Container */
+.page-container-exact {
+  flex-shrink: 0;
+  background: white;
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+  border: 2px solid #2c5282;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-.loading-overlay,
-.error-overlay {
+.page-container-exact::after {
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  border: 1px dashed #e53e3e;
+  pointer-events: none;
   z-index: 10;
+  opacity: 0.6;
 }
 
-.error-overlay {
-  background: rgba(248, 215, 218, 0.9);
-  color: #721c24;
-}
-
-.graph-container {
-  position: relative;
-}
-
-/* React Flow Designer Styles */
-.react-flow-designer {
-  width: 100%;
-  height: 100%;
+/* Page Controls */
+.page-controls {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #e0e0e0;
+  z-index: 1000;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 90%;
+}
+
+.page-select,
+.grid-select {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  background: white;
+}
+
+.snap-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #666;
+  cursor: pointer;
+}
+
+.snap-toggle input {
+  margin: 0;
+}
+
+/* Zoom Controls */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoom-btn {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
   border-radius: 4px;
   background: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.zoom-btn:hover {
+  background: #f0f0f0;
+  border-color: #007bff;
+}
+
+.zoom-display {
+  font-size: 12px;
+  min-width: 40px;
+  text-align: center;
+  font-weight: 500;
+  color: #333;
 }
 
 /* Custom Node Styles */
@@ -305,13 +355,110 @@
   box-shadow: 0 0 0 2px #007bff;
 }
 
-/* Properties Panel Updates */
-.element-info {
-  background: #f8f9fa;
-  padding: 8px;
+/* React Flow Overrides */
+.react-flow__viewport {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.react-flow__renderer {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.react-flow__pane {
+  width: 100% !important;
+  height: 100% !important;
+  cursor: default;
+}
+
+.react-flow__background {
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+}
+
+.react-flow__controls {
+  display: none !important;
+}
+
+.react-flow__attribution {
+  display: none !important;
+}
+
+/* Boundary Feedback */
+.react-flow__node.dragging {
+  transition: none;
+}
+
+.react-flow__node.boundary-warning {
+  box-shadow: 0 0 0 2px #e53e3e !important;
+}
+
+.boundary-indicator {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #fed7d7;
+  color: #c53030;
+  padding: 4px 8px;
   border-radius: 4px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-controls {
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .zoom-controls {
+    order: -1;
+  }
+}
+
+/* Utility Classes */
+.btn-primary {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.action-btn:hover {
+  background: #e9ecef;
 }
 
 .hint {
@@ -333,317 +480,112 @@
   margin: 4px 0;
 }
 
-/* Page Controls */
-.page-controls {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e0e0;
-  z-index: 1000;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.page-select,
-.grid-select {
-  padding: 4px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  background: white;
-}
-
-.snap-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  color: #666;
-  cursor: pointer;
-}
-
-.snap-toggle input {
-  margin: 0;
-}
-
-/* Page Container */
-.page-container {
-  border: 1px solid #ccc;
-  background: white !important;
-}
-
-/* React Flow adjustments for page container */
-.react-flow-designer {
-  width: 100%;
-  height: 100%;
+.element-info {
   background: #f8f9fa;
-  position: relative;
-  overflow: auto;
-}
-
-/* Remove default background when in page mode */
-.react-flow__background {
-  background: transparent !important;
-}
-
-/* Custom scrollbar for page container */
-.react-flow-designer::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.react-flow-designer::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.react-flow-designer::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  padding: 8px;
   border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
 }
 
-.react-flow-designer::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* Page boundary styling */
-.page-container {
-  border: 2px solid #2c5282 !important;
-  background: white !important;
+/* Trong globals.css - thêm vào cuối */
+.page-container-exact {
   position: relative;
 }
 
-.page-container::before {
-  content: '';
+.page-container-exact::before {
+  content: "";
   position: absolute;
-  top: -1px;
-  left: -1px;
-  right: -1px;
-  bottom: -1px;
-  border: 1px dashed #cbd5e0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid #2c5282;
   pointer-events: none;
-  z-index: 1;
+  z-index: 5;
 }
 
-/* Visual feedback when dragging to boundary */
+.page-container-exact::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  bottom: 1px;
+  border: 1px dashed #e53e3e;
+  pointer-events: none;
+  z-index: 6;
+  opacity: 0.8;
+}
+
+/* Visual feedback khi node gần biên */
 .react-flow__node:active {
-  transition: transform 0.1s;
+  transition: none;
 }
 
-/* Boundary warning style */
-.boundary-warning {
+.react-flow__node.boundary-warning {
+  box-shadow: 0 0 0 2px #e53e3e !important;
+}
+
+.boundary-indicator {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: #fed7d7;
+  background: rgba(254, 215, 215, 0.9);
   color: #c53030;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   z-index: 1000;
+  pointer-events: none;
+  border: 1px solid #feb2b2;
 }
 
-
-/* Main container - prevent overflow */
-.react-flow-designer {
-  width: 100%;
-  height: 100%;
-  background: #f5f5f5;
-  position: relative;
-  overflow: hidden !important; /* Quan trọng: ẩn scroll */
-}
-
-/* Page container wrapper */
-.page-container-wrapper {
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  padding: 20px !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-}
-
-/* Page container */
-.page-container {
-  flex-shrink: 0;
-  margin: 0 auto;
-}
-
-/* React Flow viewport constraints */
-.react-flow__viewport {
-  user-select: none;
-}
-
-.react-flow__pane {
-  cursor: default;
-}
-
-.react-flow__pane.dragging {
-  cursor: grabbing;
-}
-
-/* Controls styling */
-.react-flow__controls {
-  bottom: 10px !important;
-  left: 10px !important;
-  top: auto !important;
-}
-
-.react-flow__controls-button {
-  background: white;
-  border: 1px solid #ccc;
-  border-bottom: none;
-}
-
-.react-flow__controls-button:hover {
-  background: #f0f0f0;
-}
-
-/* Hide attribution */
-.react-flow__attribution {
-  display: none !important;
-}
-
-/* Loading state */
-.react-flow__loading {
-  display: none !important;
-}
-
-/* Reset main container */
-.react-flow-designer {
-  width: 100%;
-  height: 100%;
-  background: #f5f5f5;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
-  overflow: hidden;
-}
-
-/* Exact page container - no extra space */
+/* Trong globals.css */
 .page-container-exact {
-  flex-shrink: 0;
-  background: white;
   position: relative;
 }
 
-/* Remove all extra spacing from parent containers */
-.designer-main {
-  padding: 0 !important;
-  margin: 0 !important;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f5f5f5;
-}
-
-.designer-layout {
-  padding: 0;
-  margin: 0;
-}
-
-/* React Flow viewport - exact fit */
-.react-flow__viewport {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.react-flow__renderer {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.react-flow__pane {
-  width: 100% !important;
-  height: 100% !important;
-  cursor: default;
-}
-
-/* Controls positioning */
-.react-flow__controls {
-  bottom: 10px;
-  left: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.react-flow__controls-button {
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-bottom: 1px solid #ccc;
-}
-
-.react-flow__controls-button:last-child {
-  border-bottom: none;
-}
-
-/* Background pattern */
-.react-flow__background {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* Page controls */
-.page-controls {
+/* Main page border */
+.page-container-exact::before {
+  content: '';
   position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  border: 1px solid #e0e0e0;
-  z-index: 1000;
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid #2c5282;
+  pointer-events: none;
+  z-index: 5;
 }
 
-.page-select, .grid-select {
-  padding: 4px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  background: white;
+/* Inner boundary indicator */
+.page-container-exact::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  bottom: 1px;
+  border: 1px dashed #e53e3e;
+  pointer-events: none;
+  z-index: 6;
+  opacity: 0.6;
 }
 
-.snap-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  color: #666;
-  cursor: pointer;
+/* Corner indicators */
+.page-container-exact .corner-tl,
+.page-container-exact .corner-tr,
+.page-container-exact .corner-bl,
+.page-container-exact .corner-br {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #e53e3e;
+  z-index: 7;
 }
 
-.snap-toggle input {
-  margin: 0;
-}
-
-/* Remove any scrollbars */
-.react-flow-designer::-webkit-scrollbar {
-  display: none;
-}
-
-.react-flow__viewport::-webkit-scrollbar {
-  display: none;
-}
-
-/* Hide all overflow */
-.react-flow__wrapper {
-  overflow: hidden !important;
-}
+.page-container-exact .corner-tl { top: -1px; left: -1px; }
+.page-container-exact .corner-tr { top: -1px; right: -1px; }
+.page-container-exact .corner-bl { bottom: -1px; left: -1px; }
+.page-container-exact .corner-br { bottom: -1px; right: -1px; }
